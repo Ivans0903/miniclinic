@@ -73,6 +73,11 @@ const createPatient = async (req, res) => {
             return sendError(res, "Validation Error", { nik: "NIK harus 16 digit angka" }, 422);
         }
 
+        // Validasi format Nomor Telepon (Dimulai dengan 08, 10-13 digit)
+        if (!/^08[0-9]{8,11}$/.test(nomor_telepon)) {
+            return sendError(res, "Validation Error", { nomor_telepon: "Nomor telepon harus diawali '08' dengan panjang 10-13 digit" }, 422);
+        }
+
         // Validasi duplikasi NIK
         const [existingNik] = await connection.query("SELECT id FROM patients WHERE nik = ?", [nik]);
         if (existingNik.length > 0) {
@@ -121,6 +126,16 @@ const updatePatient = async (req, res) => {
     try {
         const patientId = req.params.id;
         const { nik, nama_pasien, jenis_kelamin, tanggal_lahir, nomor_telepon, alamat } = req.body;
+
+        // Validasi format NIK 16 digit angka
+        if (!/^[0-9]{16}$/.test(nik)) {
+            return sendError(res, "Validation Error", { nik: "NIK harus 16 digit angka" }, 422);
+        }
+
+        // Validasi format Nomor Telepon
+        if (!/^08[0-9]{8,11}$/.test(nomor_telepon)) {
+            return sendError(res, "Validation Error", { nomor_telepon: "Nomor telepon harus diawali '08' dengan panjang 10-13 digit" }, 422);
+        }
 
         const [patientRows] = await db.query("SELECT * FROM patients WHERE id = ?", [patientId]);
         if (patientRows.length === 0) {

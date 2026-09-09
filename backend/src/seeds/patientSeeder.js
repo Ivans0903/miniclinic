@@ -29,7 +29,7 @@ function generate100Patients() {
     const birthMonth = String((id % 12) + 1).padStart(2, '0');
     let birthDay = (id % 28) + 1;
     let nikDay = isMale ? birthDay : birthDay + 40; // Standar NIK: perempuan hari + 40
-    const nik = `${wilayah}01${String(nikDay).padStart(2, '0')}${birthMonth}${String(birthYear).slice(-2)}${String(id).padStart(4, '0')}`;
+    const nik = `${wilayah}0101${String(nikDay).padStart(2, '0')}${birthMonth}${String(birthYear).slice(-2)}${String(id).padStart(4, '0')}`;
 
     const firstName = isMale ? firstNamesMale[id % firstNamesMale.length] : firstNamesFemale[id % firstNamesFemale.length];
     const lastName = lastNames[(id + 2) % lastNames.length];

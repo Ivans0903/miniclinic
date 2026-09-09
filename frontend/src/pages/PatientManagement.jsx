@@ -258,10 +258,14 @@ const PatientManagement = () => {
                                         <input 
                                             type="text" 
                                             value={formData.nik} 
-                                            onChange={e => setFormData({...formData, nik: e.target.value})}
+                                            onChange={e => setFormData({...formData, nik: e.target.value.replace(/\D/g, '').slice(0, 16)})}
                                             readOnly={modalMode === 'DETAIL'}
                                             className={`w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none transition ${modalMode === 'DETAIL' ? 'bg-gray-100 text-gray-600' : ''}`}
                                             required
+                                            minLength="16"
+                                            maxLength="16"
+                                            pattern="\d{16}"
+                                            title="NIK harus tepat 16 digit angka"
                                         />
                                         {errors.nik && <p className="text-red-500 text-xs mt-1.5">{errors.nik}</p>}
                                     </div>
@@ -304,11 +308,16 @@ const PatientManagement = () => {
                                         <input 
                                             type="text" 
                                             value={formData.nomor_telepon} 
-                                            onChange={e => setFormData({...formData, nomor_telepon: e.target.value})}
+                                            onChange={e => setFormData({...formData, nomor_telepon: e.target.value.replace(/\D/g, '').slice(0, 13)})}
                                             readOnly={modalMode === 'DETAIL'}
                                             className={`w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none transition ${modalMode === 'DETAIL' ? 'bg-gray-100 text-gray-600' : ''}`}
                                             required
+                                            minLength="10"
+                                            maxLength="13"
+                                            pattern="^08\d{8,11}$"
+                                            title="Nomor telepon harus diawali '08' dengan panjang 10-13 digit"
                                         />
+                                        {errors.nomor_telepon && <p className="text-red-500 text-xs mt-1.5">{errors.nomor_telepon}</p>}
                                     </div>
                                     {modalMode === 'ADD' && (
                                         <div>
