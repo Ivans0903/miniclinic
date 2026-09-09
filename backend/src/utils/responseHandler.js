@@ -1,7 +1,16 @@
-exports.successResponse = (res, message = 'Success', data = {}, statusCode = 200) => {
-  return res.status(statusCode).json({ success: true, message, data });
+// Standar response seragam untuk seluruh endpoint
+exports.sendSuccess = (res, message, data = {}, statusCode = 200) => {
+    return res.status(statusCode).json({
+        success: true,
+        message: message,
+        data: data
+    });
 };
 
-exports.errorResponse = (res, message = 'Validation Error', errors = {}, statusCode = 400) => {
-  return res.status(statusCode).json({ success: false, message, errors });
+exports.sendError = (res, message, errors = {}, statusCode = 400) => {
+    return res.status(statusCode).json({
+        success: false,
+        message: message,
+        errors: errors
+    });
 };
