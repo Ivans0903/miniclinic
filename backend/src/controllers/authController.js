@@ -39,7 +39,7 @@ const login = async (req, res) => {
             nama_lengkap: user.nama_lengkap
         };
 
-        const jwt_secret = process.env.JWT_SECRET;
+        const jwt_secret = process.env.JWT_SECRET || "supersecret_miniclinic_jwt_2026";
         const jwt_expiry = process.env.JWT_EXPIRES_IN || "1d";
 
         const token = jwt.sign(token_payload, jwt_secret, { expiresIn: jwt_expiry });
@@ -73,7 +73,29 @@ const logout = async (req, res) => {
     }
 };
 
+const getMe = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            `SELECT users.id, users.username, users.nama_lengkap, roles.name AS role 
+             FROM users 
+             JOIN roles ON users.role_id = roles.id 
+             WHERE users.id = ? AND users.is_active = TRUE`,
+            [req.user.id]
+        );
+
+        if (rows.length === 0) {
+            return sendError(res, "User tidak ditemukan", null, 404);
+        }
+
+        return sendSuccess(res, "Data profil user berhasil diambil", rows[0], 200);
+    } catch (error) {
+        console.error('GetMe Error:', error);
+        return sendError(res, "Terjadi kesalahan pada server", error.message, 500);
+    }
+};
+
 module.exports = {
     login,
-    logout
+    logout,
+    getMe
 };

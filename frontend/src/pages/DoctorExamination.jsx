@@ -160,27 +160,32 @@ const DoctorExamination = () => {
             <div className="max-w-7xl mx-auto space-y-6">
                 
                 {/* TOP_BAR */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full blur-3xl -mr-20 -mt-20 opacity-50"></div>
-                    
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 relative overflow-hidden">
                     <div className="flex items-center gap-5 relative z-10">
-                        <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-blue-500/30 ring-4 ring-blue-50">
+                        <button
+                            onClick={() => navigate('/queue')}
+                            className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all text-xs flex items-center gap-1.5"
+                            title="Kembali ke Daftar Antrean"
+                        >
+                            <span>⬅</span> Kembali
+                        </button>
+                        <div className="h-14 w-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-2xl font-black shadow-md shadow-blue-500/20">
                             {patientData.nama_pasien.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">{patientData.nama_pasien}</h1>
-                            <div className="flex items-center gap-3 mt-1.5">
-                                <span className="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-md font-bold tracking-wide border border-blue-200">RM: {patientData.no_rekam_medis}</span>
-                                <span className="text-sm text-gray-500 font-medium">Registrasi: #{registrationId}</span>
+                            <h1 className="text-xl font-black text-slate-800 tracking-tight">{patientData.nama_pasien}</h1>
+                            <div className="flex items-center gap-3 mt-1">
+                                <span className="bg-blue-50 text-blue-700 text-xs px-2.5 py-0.5 rounded-full font-bold border border-blue-200">RM: {patientData.no_rekam_medis}</span>
+                                <span className="text-xs text-slate-400 font-mono">Registrasi ID: #{registrationId}</span>
                             </div>
                         </div>
                     </div>
+
                     <button 
                         onClick={() => setShowHistoryModal(true)}
-                        className="mt-5 md:mt-0 px-5 py-2.5 bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm relative z-10"
+                        className="mt-4 md:mt-0 px-4 py-2.5 bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-sm text-xs"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Riwayat Pasien ({patientHistory.length})
+                        <span>📜</span> Riwayat Pasien ({patientHistory.length})
                     </button>
                 </div>
 

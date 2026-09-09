@@ -233,8 +233,24 @@ const updateRegistration = async (req, res) => {
     }
 };
 
+const getRegistrationOptions = async (req, res) => {
+    try {
+        const [doctors] = await db.query(
+            "SELECT u.id, u.nama_lengkap, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'Dokter' AND u.is_active = TRUE"
+        );
+        const [polis] = await db.query("SELECT id, nama_poli, kode_huruf FROM polis WHERE is_active = TRUE");
+        const [patients] = await db.query("SELECT id, nama_pasien, no_rekam_medis, nik FROM patients ORDER BY nama_pasien ASC");
+        
+        return sendSuccess(res, "Master data pendaftaran berhasil diambil", { doctors, polis, patients }, 200);
+    } catch (error) {
+        console.error(error);
+        return sendError(res, "Gagal mengambil master data pendaftaran", error.message, 500);
+    }
+};
+
 module.exports = {
     getRegistrations,
     createRegistration,
-    updateRegistration
+    updateRegistration,
+    getRegistrationOptions
 };

@@ -20,7 +20,7 @@ const createMedicalRecord = async (req, res) => {
 
         // Verify registration
         const [regRows] = await db.query(
-            "SELECT * FROM registrations WHERE id = ? AND status IN ('Check In', 'Pemeriksaan')", 
+            "SELECT * FROM registrations WHERE id = ? AND status IN ('Menunggu', 'Check In', 'Pemeriksaan')", 
             [registration_id]
         );
         

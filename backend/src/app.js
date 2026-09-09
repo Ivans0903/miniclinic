@@ -20,6 +20,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Register Routes
+app.use('/api/auth', authRoutes);
 app.use('/api', authRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/registrations', registrationRoutes);

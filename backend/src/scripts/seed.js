@@ -221,20 +221,19 @@ async function seedDatabase() {
 
     // 5. Seed Users
     const [users] = await connection.query(`SELECT COUNT(*) as count FROM users`);
+    const [roleRows] = await connection.query(`SELECT id, name FROM roles`);
+    const getRoleId = (name) => roleRows.find(r => r.name === name)?.id;
+
+    const adminRoleId = getRoleId('Administrator');
+    const dokterRoleId = getRoleId('Dokter');
+    const petugasRoleId = getRoleId('Petugas Pendaftaran');
+
+    // Hash passwords as requested: admin1234, dokter1234, petugas1234
+    const adminPass = await bcrypt.hash('admin1234', 10);
+    const dokterPass = await bcrypt.hash('dokter1234', 10);
+    const petugasPass = await bcrypt.hash('petugas1234', 10);
+
     if (users[0].count === 0) {
-      // Ambil ID Roles
-      const [roleRows] = await connection.query(`SELECT id, name FROM roles`);
-      const getRoleId = (name) => roleRows.find(r => r.name === name).id;
-
-      const adminRoleId = getRoleId('Administrator');
-      const dokterRoleId = getRoleId('Dokter');
-      const petugasRoleId = getRoleId('Petugas Pendaftaran');
-
-      // Hash passwords
-      const adminPass = await bcrypt.hash('admin123', 10);
-      const dokterPass = await bcrypt.hash('dokter123', 10);
-      const petugasPass = await bcrypt.hash('petugas123', 10);
-
       await connection.query(`
         INSERT INTO users (role_id, username, password, nama_lengkap) VALUES
         (?, ?, ?, ?),
@@ -247,7 +246,10 @@ async function seedDatabase() {
       ]);
       console.log("Data awal 'users' berhasil ditambahkan.");
     } else {
-      console.log("Data 'users' sudah ada, melewati proses seed users.");
+      await connection.query(`UPDATE users SET password = ? WHERE username = 'admin'`, [adminPass]);
+      await connection.query(`UPDATE users SET password = ? WHERE username = 'dr_budi'`, [dokterPass]);
+      await connection.query(`UPDATE users SET password = ? WHERE username = 'petugas1'`, [petugasPass]);
+      console.log("Data 'users' sudah ada, password diperbarui (admin1234, dokter1234, petugas1234).");
     }
 
     // 6. Seed Polis

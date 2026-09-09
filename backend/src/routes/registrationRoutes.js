@@ -3,6 +3,7 @@ const router = express.Router();
 const registrationController = require('../controllers/registrationController');
 const { authenticateJWT, authorizeRoles } = require('../middlewares/authMiddleware');
 
+router.get('/options', authenticateJWT, registrationController.getRegistrationOptions);
 router.get('/', authenticateJWT, registrationController.getRegistrations);
 
 router.post(

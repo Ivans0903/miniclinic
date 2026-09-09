@@ -11,4 +11,7 @@ router.post('/login', validateLoginInput, authController.login);
 // Memerlukan token JWT (authenticateJWT) agar bisa diakses
 router.post('/logout', authenticateJWT, authController.logout);
 
+// Route untuk mendapatkan info profil user aktif
+router.get('/me', authenticateJWT, authController.getMe);
+
 module.exports = router;
