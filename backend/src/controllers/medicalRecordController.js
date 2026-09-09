@@ -58,10 +58,15 @@ const createMedicalRecord = async (req, res) => {
         // 2. Save Actions (if any)
         if (actions && Array.isArray(actions) && actions.length > 0) {
             for (const act of actions) {
-                await connection.query(
-                    `INSERT INTO record_actions (medical_record_id, medical_action_id, catatan) VALUES (?, ?, ?)`,
-                    [newRecordId, act.medical_action_id, act.catatan || ""]
-                );
+                if (act.medical_action_id) {
+                    const [checkAct] = await connection.query("SELECT id FROM medical_actions WHERE id = ?", [act.medical_action_id]);
+                    if (checkAct.length > 0) {
+                        await connection.query(
+                            `INSERT INTO record_actions (medical_record_id, medical_action_id, catatan) VALUES (?, ?, ?)`,
+                            [newRecordId, act.medical_action_id, act.catatan || ""]
+                        );
+                    }
+                }
             }
         }
 
@@ -75,23 +80,38 @@ const createMedicalRecord = async (req, res) => {
             const newPrescriptionId = prescInsertResult.insertId;
 
             for (const item of prescriptions) {
-                // Verify medicine stock
-                const [medRows] = await connection.query("SELECT stok FROM medicines WHERE id = ?", [item.medicine_id]);
-                if (medRows.length === 0 || medRows[0].stok < item.jumlah) {
-                    await connection.rollback();
-                    return sendError(res, `Stok obat tidak mencukupi untuk ID: ${item.medicine_id}`, {}, 400);
+                let targetMedicineId = item.medicine_id;
+                const customName = item.nama_obat || item.custom_nama_obat;
+
+                if (customName && typeof customName === 'string' && customName.trim() !== '') {
+                    const cleanName = customName.trim();
+                    const [existingMed] = await connection.query(
+                        "SELECT id FROM medicines WHERE LOWER(nama_obat) = LOWER(?)", 
+                        [cleanName]
+                    );
+                    if (existingMed.length > 0) {
+                        targetMedicineId = existingMed[0].id;
+                    } else {
+                        const [newMedResult] = await connection.query(
+                            "INSERT INTO medicines (nama_obat, satuan, stok) VALUES (?, ?, 100)",
+                            [cleanName, item.satuan || "Pcs"]
+                        );
+                        targetMedicineId = newMedResult.insertId;
+                    }
                 }
 
-                await connection.query(
-                    `INSERT INTO prescription_items (prescription_id, medicine_id, jumlah, aturan_pakai) VALUES (?, ?, ?, ?)`,
-                    [newPrescriptionId, item.medicine_id, item.jumlah, item.aturan_pakai]
-                );
+                if (targetMedicineId) {
+                    await connection.query(
+                        `INSERT INTO prescription_items (prescription_id, medicine_id, jumlah, aturan_pakai) VALUES (?, ?, ?, ?)`,
+                        [newPrescriptionId, targetMedicineId, item.jumlah || 1, item.aturan_pakai || "3x1 sesudah makan"]
+                    );
 
-                // Deduct stock
-                await connection.query(
-                    `UPDATE medicines SET stok = stok - ? WHERE id = ?`,
-                    [item.jumlah, item.medicine_id]
-                );
+                    // Potong stok jika ada
+                    await connection.query(
+                        `UPDATE medicines SET stok = GREATEST(0, stok - ?) WHERE id = ?`,
+                        [item.jumlah || 1, targetMedicineId]
+                    );
+                }
             }
         }
 

@@ -5,6 +5,7 @@ const { authenticateJWT, authorizeRoles } = require('../middlewares/authMiddlewa
 
 router.get('/options', authenticateJWT, registrationController.getRegistrationOptions);
 router.get('/', authenticateJWT, registrationController.getRegistrations);
+router.get('/:id', authenticateJWT, registrationController.getRegistrationById);
 
 router.post(
     '/', 

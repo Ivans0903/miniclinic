@@ -12,7 +12,7 @@ router.get(
 router.post(
     '/', 
     authenticateJWT, 
-    authorizeRoles(["Dokter"]), 
+    authorizeRoles(["Administrator", "Dokter"]), 
     prescriptionController.createPrescription
 );
 

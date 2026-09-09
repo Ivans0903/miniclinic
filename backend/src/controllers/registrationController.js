@@ -248,8 +248,39 @@ const getRegistrationOptions = async (req, res) => {
     }
 };
 
+const getRegistrationById = async (req, res) => {
+    try {
+        const registrationId = req.params.id;
+        const [rows] = await db.query(`
+            SELECT 
+                r.id, r.no_registrasi, r.tanggal_kunjungan, r.jenis_pembayaran, 
+                r.keluhan_awal, r.status, r.created_at,
+                p.id AS patient_id, p.nama_pasien, p.no_rekam_medis, p.nik, p.jenis_kelamin, p.tanggal_lahir, p.nomor_telepon, p.alamat,
+                u.id AS doctor_id, u.nama_lengkap AS nama_dokter,
+                pl.id AS poli_id, pl.nama_poli,
+                q.nomor_antrean, q.status AS status_antrean
+            FROM registrations r
+            JOIN patients p ON r.patient_id = p.id
+            JOIN users u ON r.doctor_id = u.id
+            JOIN polis pl ON r.poli_id = pl.id
+            LEFT JOIN queues q ON r.id = q.registration_id
+            WHERE r.id = ?
+        `, [registrationId]);
+
+        if (rows.length === 0) {
+            return sendError(res, "Data pendaftaran tidak ditemukan", {}, 404);
+        }
+
+        return sendSuccess(res, "Detail pendaftaran berhasil diambil", rows[0], 200);
+    } catch (error) {
+        console.error('getRegistrationById error:', error);
+        return sendError(res, "Gagal mengambil detail pendaftaran", error.message, 500);
+    }
+};
+
 module.exports = {
     getRegistrations,
+    getRegistrationById,
     createRegistration,
     updateRegistration,
     getRegistrationOptions

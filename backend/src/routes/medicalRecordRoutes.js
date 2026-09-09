@@ -6,14 +6,14 @@ const { authenticateJWT, authorizeRoles } = require('../middlewares/authMiddlewa
 router.get(
     '/patient/:patientId', 
     authenticateJWT, 
-    authorizeRoles(["Administrator", "Dokter"]), 
+    authorizeRoles(["Administrator", "Dokter", "Petugas Pendaftaran"]), 
     medicalRecordController.getRecordsByPatient
 );
 
 router.post(
     '/', 
     authenticateJWT, 
-    authorizeRoles(["Dokter"]), 
+    authorizeRoles(["Administrator", "Dokter", "Petugas Pendaftaran"]), 
     medicalRecordController.createMedicalRecord
 );
 

@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const PatientManagement = () => {
+    const { user } = useAuth();
+    const userRole = user?.role || 'Administrator';
+    const canEditPatient = ['Administrator', 'Petugas Pendaftaran'].includes(userRole);
+    const canAddPatient = ['Administrator', 'Petugas Pendaftaran'].includes(userRole);
+    const canDeletePatient = ['Administrator', 'Petugas Pendaftaran'].includes(userRole);
+
     // 1. STATE
     const [patients, setPatients] = useState([]);
     const [pagination, setPagination] = useState({ current_page: 1, total_pages: 1, limit: 10 });
@@ -146,31 +153,44 @@ const PatientManagement = () => {
     // 6. RENDER
     return (
         <div className="p-6 max-w-7xl mx-auto font-sans">
-            <h1 className="text-2xl font-bold mb-6 text-gray-800">Manajemen Master Data Pasien</h1>
+            <h1 className="text-2xl font-bold mb-2 text-gray-800">Manajemen Master Data Pasien</h1>
+            <p className="text-xs text-gray-500 mb-6">Database rekam medis dan data demografi pasien terintegrasi</p>
             
+            {!canEditPatient && (
+                <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
+                    <span className="text-xl">👨‍⚕️</span>
+                    <div>
+                        <div className="text-xs font-bold text-emerald-800">Akses Peran Dokter</div>
+                        <div className="text-xs text-emerald-700">Anda dapat melihat seluruh detail data pasien di sini. Pengisian Rekam Medis (SOAP), Diagnosa/Penyakit, dan Resep Obat dilakukan pada menu <strong>Pendaftaran & Antrean Poli</strong>.</div>
+                    </div>
+                </div>
+            )}
+
             {/* TOOLBAR */}
             <div className="flex flex-col sm:flex-row justify-between mb-4 gap-4">
                 <input 
                     type="text" 
-                    placeholder="Cari No RM / NIK / Nama..." 
+                    placeholder="Cari No RM / NIK (16 digit) / Nama Pasien..." 
                     onChange={handleSearch}
-                    className="border border-gray-300 p-2 rounded-md w-full sm:w-1/3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                    className="border border-gray-300 p-2.5 rounded-xl w-full sm:w-1/2 focus:ring-2 focus:ring-blue-400 focus:outline-none text-sm"
                 />
-                <button 
-                    onClick={openAddModal}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition duration-200"
-                >
-                    + Tambah Pasien
-                </button>
+                {canAddPatient && (
+                    <button 
+                        onClick={openAddModal}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-sm transition duration-200 text-sm flex items-center justify-center gap-2"
+                    >
+                        <span>➕</span> Tambah Pasien Baru
+                    </button>
+                )}
             </div>
 
             {/* TABLE_RESPONSIVE */}
-            <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
+            <div className="overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">No. RM</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">NIK</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">No. RM (Unik)</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">NIK (16 Digit)</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nama Pasien</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Gender</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal Lahir</th>
@@ -178,23 +198,44 @@ const PatientManagement = () => {
                             <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-200 text-sm">
                         {patients.map(patient => (
-                            <tr key={patient.id} className="hover:bg-blue-50 transition-colors">
+                            <tr key={patient.id} className="hover:bg-blue-50/60 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-emerald-100 text-emerald-800">
+                                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-mono font-bold rounded-full bg-emerald-100 text-emerald-800">
                                         {patient.no_rekam_medis}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{patient.nik}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">{patient.nama_pasien}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{patient.jenis_kelamin}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{formatDate(patient.tanggal_lahir)}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{patient.nomor_telepon}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium flex justify-center gap-2">
-                                    <button onClick={() => openDetailModal(patient)} className="text-teal-600 hover:text-teal-900 bg-teal-50 px-3 py-1 rounded">View</button>
-                                    <button onClick={() => openEditModal(patient)} className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded">Edit</button>
-                                    <button onClick={() => handleDelete(patient.id)} className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded">Delete</button>
+                                <td className="px-6 py-4 whitespace-nowrap font-mono font-semibold text-slate-800 tracking-wider">
+                                    {patient.nik}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap font-semibold text-gray-800">{patient.nama_pasien}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{patient.jenis_kelamin}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">{formatDate(patient.tanggal_lahir)}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-gray-600 font-mono">{patient.nomor_telepon}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center text-xs font-medium flex justify-center gap-2">
+                                    <button 
+                                        onClick={() => openDetailModal(patient)} 
+                                        className="text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-lg font-semibold transition"
+                                    >
+                                        👁️ View Detail
+                                    </button>
+                                    {canEditPatient && (
+                                        <button 
+                                            onClick={() => openEditModal(patient)} 
+                                            className="text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg font-semibold transition"
+                                        >
+                                            ✏️ Edit Pasien
+                                        </button>
+                                    )}
+                                    {canDeletePatient && (
+                                        <button 
+                                            onClick={() => handleDelete(patient.id)} 
+                                            className="text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg font-semibold transition"
+                                        >
+                                            🗑️ Delete
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}

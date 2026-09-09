@@ -1,4 +1,4 @@
-mysqlCREATE DATABASE IF NOT EXISTS clinic_db;
+CREATE DATABASE IF NOT EXISTS clinic_db;
 USE clinic_db;
 
 CREATE TABLE IF NOT EXISTS roles (

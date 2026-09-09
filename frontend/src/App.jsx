@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import QueueManagement from './pages/QueueManagement';
 import DoctorExamination from './pages/DoctorExamination';
 import PatientManagement from './pages/PatientManagement';
+import UserManagement from './pages/UserManagement';
 
 // Komponen Pembatas Akses Login (Protected Route)
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -77,6 +78,12 @@ const Layout = ({ children }) => {
       path: '/patients',
       icon: '👥',
       roles: ['Administrator', 'Petugas Pendaftaran', 'Dokter']
+    },
+    {
+      name: 'Manajemen Pengguna & Role',
+      path: '/users',
+      icon: '🛡️',
+      roles: ['Administrator']
     }
   ];
 
@@ -183,6 +190,7 @@ const Layout = ({ children }) => {
               {location.pathname === '/dashboard' && 'Dashboard Utama Klinik'}
               {location.pathname === '/queue' && 'Manajemen Antrean & Pendaftaran Poli'}
               {location.pathname === '/patients' && 'Kelola Master Data Pasien'}
+              {location.pathname === '/users' && 'Manajemen Pengguna & Hak Akses (Role)'}
               {location.pathname.startsWith('/doctor/examination') && 'Pemeriksaan Diagnosa Medis Pasien (SOAP)'}
             </h2>
             <p className="text-xs text-slate-500">
@@ -242,6 +250,17 @@ export default function App() {
               <ProtectedRoute>
                 <Layout>
                   <PatientManagement />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute allowedRoles={['Administrator']}>
+                <Layout>
+                  <UserManagement />
                 </Layout>
               </ProtectedRoute>
             }

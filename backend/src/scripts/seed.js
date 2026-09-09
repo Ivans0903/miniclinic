@@ -146,6 +146,29 @@ async function seedDatabase() {
     `);
     console.log("Tabel master medis siap.");
 
+    const [actCount] = await connection.query(`SELECT COUNT(*) as count FROM medical_actions`);
+    if (actCount[0].count === 0) {
+      await connection.query(`
+        INSERT INTO medical_actions (nama_tindakan, deskripsi, tarif) VALUES
+        ('Pemeriksaan Fisik Lanjutan', 'Pemeriksaan fisik umum oleh dokter spesialis / umum', 50000),
+        ('Pembersihan & Rawat Luka', 'Perawatan dan sterilisasi luka luar', 75000),
+        ('Injeksi Vitamin / Obat', 'Suntikan intra muscular vitamin atau analgesik', 60000),
+        ('Konsultasi Kesehatan', 'Konsultasi dan edukasi medis komprehensif', 50000)
+      `);
+    }
+
+    const [medCount] = await connection.query(`SELECT COUNT(*) as count FROM medicines`);
+    if (medCount[0].count === 0) {
+      await connection.query(`
+        INSERT INTO medicines (nama_obat, satuan, stok) VALUES
+        ('Paracetamol 500mg', 'Tablet', 100),
+        ('Amoxicillin 500mg', 'Kapsul', 50),
+        ('Cetirizine 10mg', 'Tablet', 200),
+        ('Ibuprofen 400mg', 'Tablet', 80),
+        ('Antasida Doen', 'Tablet', 150)
+      `);
+    }
+
     // 3.6 Buat tabel SOAP
     await connection.query(`
       CREATE TABLE IF NOT EXISTS medical_records (
@@ -238,18 +261,32 @@ async function seedDatabase() {
         INSERT INTO users (role_id, username, password, nama_lengkap) VALUES
         (?, ?, ?, ?),
         (?, ?, ?, ?),
+        (?, ?, ?, ?),
+        (?, ?, ?, ?),
         (?, ?, ?, ?)
       `, [
         adminRoleId, 'admin', adminPass, 'Super Administrator',
+        dokterRoleId, 'dokter', dokterPass, 'dr. Budi Santoso',
         dokterRoleId, 'dr_budi', dokterPass, 'dr. Budi Santoso',
+        petugasRoleId, 'petugas', petugasPass, 'Siti Aminah',
         petugasRoleId, 'petugas1', petugasPass, 'Siti Aminah'
       ]);
       console.log("Data awal 'users' berhasil ditambahkan.");
     } else {
       await connection.query(`UPDATE users SET password = ? WHERE username = 'admin'`, [adminPass]);
-      await connection.query(`UPDATE users SET password = ? WHERE username = 'dr_budi'`, [dokterPass]);
-      await connection.query(`UPDATE users SET password = ? WHERE username = 'petugas1'`, [petugasPass]);
-      console.log("Data 'users' sudah ada, password diperbarui (admin1234, dokter1234, petugas1234).");
+      await connection.query(`UPDATE users SET password = ? WHERE username IN ('dokter', 'dr_budi')`, [dokterPass]);
+      await connection.query(`UPDATE users SET password = ? WHERE username IN ('petugas', 'petugas1')`, [petugasPass]);
+      
+      // Ensure 'dokter' and 'petugas' exist
+      const [dokterExists] = await connection.query(`SELECT id FROM users WHERE username = 'dokter'`);
+      if (dokterExists.length === 0) {
+        await connection.query(`INSERT INTO users (role_id, username, password, nama_lengkap) VALUES (?, 'dokter', ?, 'dr. Budi Santoso')`, [dokterRoleId, dokterPass]);
+      }
+      const [petugasExists] = await connection.query(`SELECT id FROM users WHERE username = 'petugas'`);
+      if (petugasExists.length === 0) {
+        await connection.query(`INSERT INTO users (role_id, username, password, nama_lengkap) VALUES (?, 'petugas', ?, 'Siti Aminah')`, [petugasRoleId, petugasPass]);
+      }
+      console.log("Data 'users' dipastikan lengkap (admin, dokter, petugas).");
     }
 
     // 6. Seed Polis
