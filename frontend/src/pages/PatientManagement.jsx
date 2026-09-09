@@ -27,6 +27,11 @@ const PatientManagement = () => {
     });
     const [errors, setErrors] = useState({});
     
+    // States for Medical History
+    const [patientHistory, setPatientHistory] = useState([]);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+    
     const searchTimeoutRef = useRef(null);
 
     // 2. LIFECYCLE & FETCH_PATIENT_DATA
@@ -143,10 +148,35 @@ const PatientManagement = () => {
         }
     };
 
+    const fetchPatientHistory = async (patientId) => {
+        setLoadingHistory(true);
+        try {
+            const res = await api.get(`/medical-records/patient/${patientId}`);
+            if (res.data.success) {
+                setPatientHistory(res.data.data.history || []);
+                setShowHistoryModal(true);
+            }
+        } catch (error) {
+            console.error("Riwayat pasien kosong atau gagal dimuat", error);
+            setPatientHistory([]);
+            setShowHistoryModal(true); // Tetap tampilkan meski kosong
+        } finally {
+            setLoadingHistory(false);
+        }
+    };
+
     const formatDate = (dateString) => {
         if (!dateString) return "-";
         return new Date(dateString).toLocaleDateString('id-ID', {
             day: '2-digit', month: 'long', year: 'numeric'
+        });
+    };
+
+    const formatDateTime = (dateString) => {
+        if (!dateString) return "-";
+        return new Date(dateString).toLocaleString('id-ID', {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
         });
     };
 
@@ -218,7 +248,13 @@ const PatientManagement = () => {
                                         onClick={() => openDetailModal(patient)} 
                                         className="text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-lg font-semibold transition"
                                     >
-                                        👁️ View Detail
+                                        👁️ Detail
+                                    </button>
+                                    <button 
+                                        onClick={() => { setSelectedPatient(patient); fetchPatientHistory(patient.id); }}
+                                        className="text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1"
+                                    >
+                                        <span>📜</span> Riwayat
                                     </button>
                                     {canEditPatient && (
                                         <button 
@@ -403,6 +439,93 @@ const PatientManagement = () => {
                                     )}
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL_HISTORY */}
+            {showHistoryModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900 bg-opacity-60 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="flex justify-between items-center pb-4 border-b border-gray-100 mb-4 bg-white shrink-0">
+                            <div>
+                                <h3 className="text-lg font-black text-gray-800">
+                                    Riwayat Rekam Medis: <span className="text-blue-600">{selectedPatient?.nama_pasien}</span>
+                                </h3>
+                                <p className="text-xs text-gray-500 font-mono mt-1">No RM: {selectedPatient?.no_rekam_medis} | NIK: {selectedPatient?.nik}</p>
+                            </div>
+                            <button onClick={() => setShowHistoryModal(false)} className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center font-bold text-sm transition">
+                                ✕
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-4 overflow-y-auto pr-2 flex-1">
+                            {loadingHistory ? (
+                                <div className="text-center py-10">
+                                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                                    <p className="text-sm font-medium text-gray-500">Memuat Riwayat Medis...</p>
+                                </div>
+                            ) : patientHistory.length === 0 ? (
+                                <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                    <div className="text-3xl mb-2">📁</div>
+                                    <p className="text-sm text-gray-500 font-medium">Belum ada riwayat pemeriksaan medis sebelumnya.</p>
+                                </div>
+                            ) : (
+                                patientHistory.map((rec) => (
+                                    <div key={rec.id} className="bg-gray-50 p-5 rounded-2xl border border-gray-200 space-y-3 shadow-sm hover:shadow-md transition">
+                                        <div className="flex justify-between items-center border-b border-gray-200 pb-3">
+                                            <div>
+                                                <span className="text-sm font-bold text-gray-800">{formatDateTime(rec.created_at)}</span>
+                                                <span className="ml-2 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">({rec.nama_dokter} - {rec.nama_poli})</span>
+                                            </div>
+                                            <span className="text-[10px] font-mono font-bold bg-white px-2.5 py-1 rounded-full border border-gray-300 text-gray-700 shadow-sm">
+                                                #{rec.no_registrasi}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700">
+                                            <div className="bg-white p-3 rounded-xl border border-gray-100"><strong className="text-blue-800 block mb-1 text-xs uppercase tracking-wider">S (Keluhan):</strong> {rec.subjective}</div>
+                                            <div className="bg-white p-3 rounded-xl border border-gray-100"><strong className="text-blue-800 block mb-1 text-xs uppercase tracking-wider">O (Tanda Vital):</strong> TD: {rec.tekanan_darah}, Suhu: {rec.suhu_tubuh}°C, BB: {rec.berat_badan}kg</div>
+                                            <div className="bg-white p-3 rounded-xl border border-gray-100"><strong className="text-emerald-800 block mb-1 text-xs uppercase tracking-wider">A (Diagnosa):</strong> {rec.assessment}</div>
+                                            <div className="bg-white p-3 rounded-xl border border-gray-100"><strong className="text-purple-800 block mb-1 text-xs uppercase tracking-wider">P (Plan):</strong> {rec.plan}</div>
+                                        </div>
+
+                                        {/* Tindakan */}
+                                        {rec.actions && rec.actions.length > 0 && (
+                                            <div className="mt-3 pt-3 border-t border-gray-200">
+                                                <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider mb-2">⚕️ Tindakan Medis:</div>
+                                                <ul className="space-y-1.5">
+                                                    {rec.actions.map(act => (
+                                                        <li key={act.id} className="text-xs bg-white px-3 py-2 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
+                                                            <span className="font-semibold text-gray-800">{act.nama_tindakan}</span>
+                                                            {act.catatan && <span className="text-gray-500 italic">"{act.catatan}"</span>}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {/* Resep Obat */}
+                                        {rec.prescription && rec.prescription.items && rec.prescription.items.length > 0 && (
+                                            <div className="mt-3 pt-3 border-t border-gray-200">
+                                                <div className="text-[11px] font-bold text-rose-600 uppercase tracking-wider mb-2">💊 Resep Obat:</div>
+                                                <ul className="space-y-1.5">
+                                                    {rec.prescription.items.map(item => (
+                                                        <li key={item.id} className="text-xs bg-white px-3 py-2 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
+                                                            <div>
+                                                                <span className="font-semibold text-gray-800">{item.nama_obat}</span> 
+                                                                <span className="text-gray-500 ml-1">({item.jumlah} {item.satuan})</span>
+                                                            </div>
+                                                            <span className="font-medium text-gray-600 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">{item.aturan_pakai}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>
