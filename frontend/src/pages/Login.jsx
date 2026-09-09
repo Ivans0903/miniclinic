@@ -110,7 +110,6 @@ export default function Login() {
                     <div className="text-2xl mb-1">{r.icon}</div>
                     <div>
                       <div className="text-xs font-bold leading-tight text-slate-800">{r.name}</div>
-                      <div className="text-[10px] text-slate-500 mt-1 font-mono">{r.pass}</div>
                     </div>
                   </button>
                 );
