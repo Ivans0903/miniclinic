@@ -7,6 +7,9 @@ app.use(express.json());
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
+const patientRoutes = require('./routes/patientRoutes');
+const registrationRoutes = require('./routes/registrationRoutes');
+const queueRoutes = require('./routes/queueRoutes');
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -14,6 +17,9 @@ app.get('/api/health', (req, res) => {
 });
 
 // Register Routes
-app.use('/api', authRoutes); // Menggunakan /api/login dan /api/logout
+app.use('/api', authRoutes);
+app.use('/api/patients', patientRoutes);
+app.use('/api/registrations', registrationRoutes);
+app.use('/api/queues', queueRoutes);
 
 module.exports = app;

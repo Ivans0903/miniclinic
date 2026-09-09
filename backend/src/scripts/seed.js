@@ -75,6 +75,58 @@ async function seedDatabase() {
       if (err.code !== 'ER_DUP_KEYNAME') throw err;
     }
 
+    // 3.2 Buat tabel polis
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS polis (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nama_poli VARCHAR(50) UNIQUE NOT NULL,
+        kode_huruf CHAR(1) UNIQUE NOT NULL,
+        deskripsi TEXT,
+        is_active BOOLEAN DEFAULT TRUE
+      )
+    `);
+    console.log("Tabel 'polis' siap.");
+
+    // 3.3 Buat tabel registrations
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS registrations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        no_registrasi VARCHAR(20) UNIQUE NOT NULL,
+        patient_id INT NOT NULL,
+        doctor_id INT NOT NULL,
+        poli_id INT NOT NULL,
+        tanggal_kunjungan DATE NOT NULL,
+        jenis_pembayaran VARCHAR(20) NOT NULL CHECK (jenis_pembayaran IN ('BPJS', 'Umum', 'Asuransi Swasta')),
+        keluhan_awal TEXT NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'Menunggu' CHECK (status IN ('Menunggu', 'Check In', 'Pemeriksaan', 'Selesai')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE RESTRICT,
+        FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE RESTRICT,
+        FOREIGN KEY (poli_id) REFERENCES polis(id) ON DELETE RESTRICT,
+        INDEX idx_registrations_date_status (tanggal_kunjungan, status),
+        INDEX idx_registrations_patient (patient_id)
+      )
+    `);
+    console.log("Tabel 'registrations' siap.");
+
+    // 3.4 Buat tabel queues
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS queues (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        registration_id INT UNIQUE NOT NULL,
+        nomor_antrean VARCHAR(10) NOT NULL,
+        tanggal_antrean DATE NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'Menunggu' CHECK (status IN ('Menunggu', 'Dipanggil', 'Selesai', 'Dilewati')),
+        waktu_panggilan TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE RESTRICT,
+        INDEX idx_registrations_date_status (tanggal_antrean, status)
+      )
+    `);
+    console.log("Tabel 'queues' siap.");
+
     // 4. Seed Roles
     const [roles] = await connection.query(`SELECT COUNT(*) as count FROM roles`);
     if (roles[0].count === 0) {
@@ -118,6 +170,21 @@ async function seedDatabase() {
       console.log("Data awal 'users' berhasil ditambahkan.");
     } else {
       console.log("Data 'users' sudah ada, melewati proses seed users.");
+    }
+
+    // 6. Seed Polis
+    const [polisRows] = await connection.query(`SELECT COUNT(*) as count FROM polis`);
+    if (polisRows[0].count === 0) {
+      await connection.query(`
+        INSERT INTO polis (nama_poli, deskripsi, kode_huruf) VALUES
+        ('Poli Umum', 'Layanan kesehatan primer umum', 'A'),
+        ('Poli Gigi', 'Layanan perawatan dan kesehatan gigi', 'B'),
+        ('Poli Anak', 'Layanan spesialis anak', 'C'),
+        ('Poli Penyakit Dalam', 'Layanan spesialis penyakit dalam', 'D')
+      `);
+      console.log("Data awal 'polis' berhasil ditambahkan.");
+    } else {
+      console.log("Data 'polis' sudah ada, melewati proses seed polis.");
     }
 
     console.log('Proses inisialisasi dan seeder database SELESAI.');
