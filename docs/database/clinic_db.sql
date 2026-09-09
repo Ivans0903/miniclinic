@@ -18,3 +18,18 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
 );
+
+CREATE TABLE IF NOT EXISTS patients (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    no_rekam_medis VARCHAR(6) UNIQUE NOT NULL,
+    nik VARCHAR(16) UNIQUE NOT NULL,
+    nama_pasien VARCHAR(100) NOT NULL,
+    jenis_kelamin VARCHAR(15) NOT NULL CHECK (jenis_kelamin IN ('Laki-laki', 'Perempuan')),
+    tanggal_lahir DATE NOT NULL,
+    nomor_telepon VARCHAR(20) NOT NULL,
+    alamat TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_patients_search ON patients(nik, nama_pasien, no_rekam_medis);

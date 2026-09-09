@@ -49,6 +49,32 @@ async function seedDatabase() {
     `);
     console.log("Tabel 'users' siap.");
 
+    // 3.1 Buat tabel patients
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS patients (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        no_rekam_medis VARCHAR(6) UNIQUE NOT NULL,
+        nik VARCHAR(16) UNIQUE NOT NULL,
+        nama_pasien VARCHAR(100) NOT NULL,
+        jenis_kelamin VARCHAR(15) NOT NULL CHECK (jenis_kelamin IN ('Laki-laki', 'Perempuan')),
+        tanggal_lahir DATE NOT NULL,
+        nomor_telepon VARCHAR(20) NOT NULL,
+        alamat TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("Tabel 'patients' siap.");
+
+    // Buat index
+    try {
+      await connection.query(`CREATE INDEX idx_patients_search ON patients(nik, nama_pasien, no_rekam_medis)`);
+      console.log("Index 'idx_patients_search' siap.");
+    } catch (err) {
+      // Abaikan jika index sudah ada (Error: ER_DUP_KEYNAME)
+      if (err.code !== 'ER_DUP_KEYNAME') throw err;
+    }
+
     // 4. Seed Roles
     const [roles] = await connection.query(`SELECT COUNT(*) as count FROM roles`);
     if (roles[0].count === 0) {
