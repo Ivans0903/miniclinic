@@ -127,6 +127,84 @@ async function seedDatabase() {
     `);
     console.log("Tabel 'queues' siap.");
 
+    // 3.5 Buat tabel master medis
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS medical_actions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nama_tindakan VARCHAR(100) NOT NULL,
+        deskripsi TEXT,
+        tarif DECIMAL(12, 2) DEFAULT 0.00
+      )
+    `);
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS medicines (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nama_obat VARCHAR(100) NOT NULL,
+        satuan VARCHAR(20) NOT NULL,
+        stok INT NOT NULL DEFAULT 0
+      )
+    `);
+    console.log("Tabel master medis siap.");
+
+    // 3.6 Buat tabel SOAP
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS medical_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        registration_id INT UNIQUE NOT NULL,
+        patient_id INT NOT NULL,
+        doctor_id INT NOT NULL,
+        subjective TEXT NOT NULL,
+        tekanan_darah VARCHAR(20) NOT NULL,
+        suhu_tubuh DECIMAL(4, 1) NOT NULL,
+        berat_badan DECIMAL(5, 2) NOT NULL,
+        tinggi_badan DECIMAL(5, 2) NOT NULL,
+        assessment TEXT NOT NULL,
+        plan TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE RESTRICT,
+        FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE RESTRICT,
+        FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE RESTRICT,
+        INDEX idx_mr_patient (patient_id),
+        INDEX idx_mr_doctor (doctor_id)
+      )
+    `);
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS record_actions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        medical_record_id INT NOT NULL,
+        medical_action_id INT NOT NULL,
+        catatan TEXT,
+        FOREIGN KEY (medical_record_id) REFERENCES medical_records(id) ON DELETE CASCADE,
+        FOREIGN KEY (medical_action_id) REFERENCES medical_actions(id) ON DELETE RESTRICT
+      )
+    `);
+    console.log("Tabel Rekam Medis & Tindakan siap.");
+
+    // 3.7 Buat tabel Apotek
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS prescriptions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        medical_record_id INT UNIQUE NOT NULL,
+        patient_id INT NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'Menunggu' CHECK (status IN ('Menunggu', 'Diproses', 'Selesai')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (medical_record_id) REFERENCES medical_records(id) ON DELETE CASCADE,
+        FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE RESTRICT
+      )
+    `);
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS prescription_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        prescription_id INT NOT NULL,
+        medicine_id INT NOT NULL,
+        jumlah INT NOT NULL CHECK (jumlah > 0),
+        aturan_pakai VARCHAR(100) NOT NULL,
+        FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE CASCADE,
+        FOREIGN KEY (medicine_id) REFERENCES medicines(id) ON DELETE RESTRICT
+      )
+    `);
+    console.log("Tabel Resep Obat (Apotek) siap.");
     // 4. Seed Roles
     const [roles] = await connection.query(`SELECT COUNT(*) as count FROM roles`);
     if (roles[0].count === 0) {
